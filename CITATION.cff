@@ -3,6 +3,7 @@ message: "If you use this code, please cite the paper below."
 title: "nMSM: A Neural Multi-State Model for Joint State-Covariate Trajectory Forecasting"
 type: software
 version: 0.1.0
+license: MIT
 authors:
   - family-names: Ries
     given-names: Maxmillan

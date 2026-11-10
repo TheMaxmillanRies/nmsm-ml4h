@@ -337,6 +337,6 @@ native outputs do not define the categorical NLL used here.
 ```
 
 ## License and third-party code
-The license for the authors' code will be added as `LICENSE`. See [`THIRD_PARTY_NOTICES.txt`](THIRD_PARTY_NOTICES.txt)
+The authors' code is released under the [MIT License](LICENSE). See [`THIRD_PARTY_NOTICES.txt`](THIRD_PARTY_NOTICES.txt)
 for baseline provenance. Some baselines are reimplementations, not official author code. MixMarkov's Apache-2.0
 license is kept in `THIRD_PARTY_LICENSES/`.
