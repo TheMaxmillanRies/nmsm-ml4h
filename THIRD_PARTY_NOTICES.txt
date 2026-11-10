@@ -1,0 +1,23 @@
+Third-party notices
+
+The package contains the study's implementations and adapters, not a claim that
+every baseline is official author code.
+
+- SurvNODE: algorithm/code-informed recurrent-graph adaptation; upstream reference
+  https://github.com/stefangroha/SurvNODE . The upstream checkout inspected for the
+  study did not include a top-level license. No upstream repository, notebooks,
+  data or pretrained checkpoints are bundled. This package does not purport to
+  grant rights to upstream material.
+- MixMarkov: https://github.com/spotify-research/mixmarkov . The study implements
+  its generalized-Dirichlet likelihood using PyTorch derivatives and SciPy
+  Newton-CG. The upstream Apache-2.0 license is retained in
+  `THIRD_PARTY_LICENSES/MixMarkov-Apache-2.0.txt`.
+- IDNetwork and msPseudo: paper-based reimplementations with graph/forecasting
+  adaptations described in the manuscript; not official code.
+- msCox: Python implementation of transition-specific Cox and Aalen–Johansen
+  estimators, not redistributed `mstate` R code.
+- MIMIC-IV-derived respiratory data: Moukheiber et al. (2025), version 1.1.0,
+  DOI 10.13026/wewp-sj67. Obtain data independently under PhysioNet's terms.
+
+The authors' own code is covered by the repository LICENSE file. That license
+does not alter the third-party rights described above.

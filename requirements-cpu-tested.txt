@@ -1,0 +1,11 @@
+# Python 3.10 local verification environment. Install a platform-appropriate
+# PyTorch wheel separately; the original local build was 2.6.0+cu118 with CUDA hidden.
+numpy==2.2.6
+pandas==2.2.3
+scipy==1.13.1
+scikit-learn==1.6.1
+pyarrow==19.0.1
+torch==2.6.0
+torchdiffeq==0.2.5
+psutil==7.0.0
+tqdm==4.67.1

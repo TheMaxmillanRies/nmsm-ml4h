@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the paper below."
+title: "nMSM: A Neural Multi-State Model for Joint State-Covariate Trajectory Forecasting"
+type: software
+version: 0.1.0
+authors:
+  - family-names: Ries
+    given-names: Maxmillan
+    affiliation: University of Edinburgh
+  - family-names: Mohan
+    given-names: Karthik
+    affiliation: University of Edinburgh
+  - family-names: Guthrie
+    given-names: Bruce
+    affiliation: University of Edinburgh
+  - family-names: Seth
+    given-names: Sohan
+    affiliation: University of Edinburgh
+repository-code: "https://github.com/TheMaxmillanRies/nmsm-ml4h"
+preferred-citation:
+  type: conference-paper
+  title: "nMSM: A Neural Multi-State Model for Joint State-Covariate Trajectory Forecasting"
+  authors:
+    - family-names: Ries
+      given-names: Maxmillan
+    - family-names: Mohan
+      given-names: Karthik
+    - family-names: Guthrie
+      given-names: Bruce
+    - family-names: Seth
+      given-names: Sohan
+  collection-title: "Proceedings of the Machine Learning for Health (ML4H) Symposium"
+  year: 2026

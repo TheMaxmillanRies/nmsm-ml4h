@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nmsm-ml4h"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy",
+  "pandas",
+  "pyarrow",
+  "psutil",
+  "scikit-learn",
+  "scipy",
+  "torch",
+  "torchdiffeq==0.2.5",
+  "tqdm",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

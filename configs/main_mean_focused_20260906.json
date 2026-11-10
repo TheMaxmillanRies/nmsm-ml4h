@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "source": "reports/statistics/nmsm_validation_selected_optimization_20260904.json",
+  "source_sha256": "48b351b33b0792883e338502114ea392de1d3296898b4952763745e5f1ab0bbd",
+  "architecture_rule": "Reuse the previously inner-validation-selected candidate in each fold, for both objectives. Do not reuse fitted weights or fitted feature encoders.",
+  "selected_candidates": {
+    "synthetic_full": ["small", "regularized", "regularized", "regularized", "regularized"],
+    "mimic": ["canonical", "compact", "canonical", "canonical", "canonical"]
+  },
+  "objectives": ["nll", "mean_focused"],
+  "covariate_weights": [0.1, 1.0],
+  "temperatures": [0.9, 1.0, 1.1],
+  "split_seed": 42,
+  "fit_seed": 2026091100,
+  "selection_seed": 2026091200,
+  "outer_seed": 2026091300,
+  "epochs": {"synthetic_full": 30, "mimic": 60},
+  "patience": 8,
+  "checkpoint_metric": "state",
+  "selection_paths": 100,
+  "outer_paths": 500
+}

@@ -1,0 +1,18 @@
+# Data, runs and outputs (never commit patient data or derived predictions)
+data/
+runs/
+results/
+output/
+*.parquet
+*.npz
+*.pt
+*.ckpt
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+.ipynb_checkpoints/
