@@ -201,7 +201,7 @@ forecast rather than being a side output.
 
 ### Generated paths look like real ones
 
-<p align="center"><img src="docs/assets/path_fidelity.png" width="75%" alt="Distribution of state changes and hours on INV in 48 hours: real patients versus nMSM-generated paths"></p>
+<p align="center"><img src="docs/assets/fig4_path_summaries.png" width="75%" alt="Path summaries on MIMIC-IV: observed versus generated state changes, INV duration and state occupation over 48 hours"></p>
 
 Across 500 held-out MIMIC-IV stays (500 paths each), nMSM-T closely reproduces the observed distributions of
 state-change counts and cumulative invasive-ventilation duration. Across 16 variables, 98.54% of newly generated

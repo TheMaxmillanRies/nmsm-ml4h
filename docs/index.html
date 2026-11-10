@@ -4,242 +4,431 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>nMSM · ML4H 2026</title>
-<meta name="description" content="nMSM: a neural multi-state model that jointly generates clinical states and covariates, closing the state–covariate feedback loop. ML4H 2026.">
+<meta name="description" content="nMSM: a discrete-time autoregressive model that jointly generates clinical states, measurements and observation patterns within an explicit multi-state graph. ML4H 2026.">
 <meta property="og:title" content="nMSM: A Neural Multi-State Model for Joint State–Covariate Trajectory Forecasting">
-<meta property="og:description" content="Forecast the patient, not just the state. ML4H 2026.">
-<meta property="og:image" content="assets/hero_rollouts.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400&family=Raleway:wght@600;700;800&display=swap" rel="stylesheet">
+<meta property="og:description" content="Joint state–covariate trajectory forecasting with a neural multi-state model. ML4H 2026.">
+<meta property="og:image" content="https://themaxmillanries.github.io/nmsm-ml4h/assets/fig1_rollout_step.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/computer-modern@0.1.2/cmu-serif.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/computer-modern@0.1.2/cmu-typewriter-text.css">
+<script>
+  window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]] }, chtml: { scale: 1.0 } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
 <style>
+  /* Colours taken from the paper's figures. */
   :root {
     --bg: #ffffff;
-    --surface: #f3f4f7;
-    --ink: #0f182b;
-    --ink2: #3d4657;
-    --muted: #6b7280;
-    --rule: #dde1e8;
-    --accent: #c1272d;
-    --navy: #0f182b;
-    --link: #2e6db4;
-    --code-bg: #0f182b;
-    --code-ink: #e8ecf3;
+    --paper: #ffffff;
+    --ink: #1b1f24;
+    --ink2: #3c434b;
+    --muted: #68707a;
+    --rule: #d9dde2;
+    --navy: #33536d;
+    --navy-fill: #eaf2f8;
+    --teal: #357a76;
+    --teal-fill: #eaf3f1;
+    --copper: #a56e26;
+    --copper-fill: #fcf2df;
+    --link: #2f5f8a;
+    --code-bg: #f4f6f8;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #0d1220;
-      --surface: #161d2e;
-      --ink: #eef1f6;
-      --ink2: #c3c9d4;
-      --muted: #8f97a6;
-      --rule: #273046;
-      --accent: #e5545a;
-      --link: #7fb0ec;
-      --code-bg: #060a14;
-      --code-ink: #e8ecf3;
+      --bg: #12171d;
+      --paper: #ffffff;
+      --ink: #e7eaee;
+      --ink2: #c3c9d0;
+      --muted: #949ca6;
+      --rule: #2c343d;
+      --navy: #9ab9d3;
+      --navy-fill: #1b2631;
+      --teal: #8cc3bf;
+      --teal-fill: #18272a;
+      --copper: #d9a35c;
+      --copper-fill: #2a2318;
+      --link: #94bde3;
+      --code-bg: #1a2028;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #0d1220;
-    --surface: #161d2e;
-    --ink: #eef1f6;
-    --ink2: #c3c9d4;
-    --muted: #8f97a6;
-    --rule: #273046;
-    --accent: #e5545a;
-    --link: #7fb0ec;
-    --code-bg: #060a14;
-    --code-ink: #e8ecf3;
+    --bg: #12171d;
+    --paper: #ffffff;
+    --ink: #e7eaee;
+    --ink2: #c3c9d0;
+    --muted: #949ca6;
+    --rule: #2c343d;
+    --navy: #9ab9d3;
+    --navy-fill: #1b2631;
+    --teal: #8cc3bf;
+    --teal-fill: #18272a;
+    --copper: #d9a35c;
+    --copper-fill: #2a2318;
+    --link: #94bde3;
+    --code-bg: #1a2028;
   }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
   body {
     margin: 0; background: var(--bg); color: var(--ink);
-    font: 18px/1.6 "Lato", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font: 19px/1.6 "CMU Serif", "Latin Modern Roman", "Computer Modern", Georgia, serif;
   }
   a { color: var(--link); text-underline-offset: 2px; }
-  .wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
-  .band { height: 8px; background: linear-gradient(to bottom, #0f182b 0 70%, #ca2437 70% 100%); }
-  header { text-align: center; padding: 56px 0 32px; }
-  h1, h2, h3 { font-family: "Raleway", "Lato", sans-serif; line-height: 1.2; }
-  h1 { font-size: clamp(28px, 4.6vw, 44px); font-weight: 800; margin: 0 0 20px; }
-  h1 .m { color: var(--accent); }
-  .authors { font-size: 20px; font-weight: 700; margin: 0; }
-  .affil { color: var(--ink2); margin: 4px 0 12px; }
-  .venue { display: inline-block; background: var(--navy); color: #fff; font-weight: 700;
-           border-radius: 6px; padding: 4px 12px; font-size: 15px; letter-spacing: .02em; }
-  :root[data-theme="dark"] .venue { background: #273046; }
-  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .venue { background: #273046; } }
-  .buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 24px; }
-  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 999px;
-         background: var(--surface); color: var(--ink); text-decoration: none; font-weight: 700;
-         border: 1px solid var(--rule); }
-  .btn:hover { border-color: var(--accent); }
-  .btn svg { width: 18px; height: 18px; fill: currentColor; }
-  .tagline { text-align: center; margin: 8px 0 28px; }
-  .tagline b { font-family: "Raleway", sans-serif; font-size: clamp(24px, 3.4vw, 34px); display: block; }
-  .tagline b span { color: var(--accent); }
-  .tagline p { color: var(--ink2); max-width: 680px; margin: 10px auto 0; }
-  figure { margin: 0 0 8px; }
-  figure.narrow { max-width: 760px; margin-left: auto; margin-right: auto; }
-  .fig { background: #fff; border-radius: 12px; padding: 12px; border: 1px solid var(--rule); }
-  .fig img { display: block; width: 100%; height: auto; }
-  figcaption { color: var(--muted); font-size: 15px; line-height: 1.5; margin-top: 8px; }
-  section { padding: 40px 0 8px; border-top: 1px solid var(--rule); margin-top: 40px; }
-  h2 { font-size: 28px; margin: 0 0 16px; }
-  h2 .q { color: var(--accent); }
-  .lead { font-size: 20px; color: var(--ink2); margin: 0 0 20px; }
-  .abstract { background: var(--surface); border-radius: 12px; padding: 20px 24px; color: var(--ink2); }
-  ol.steps { padding-left: 0; list-style: none; counter-reset: s; display: grid; gap: 12px;
-             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin: 20px 0 0; }
-  ol.steps li { counter-increment: s; background: var(--surface); border-radius: 10px; padding: 14px 16px; }
-  ol.steps li::before { content: counter(s); display: inline-grid; place-items: center; width: 26px; height: 26px;
-                        border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700;
-                        font-size: 14px; margin-right: 8px; }
-  ol.steps b { font-family: "Raleway", sans-serif; }
-  .two { display: grid; gap: 24px; grid-template-columns: 1fr; }
-  @media (min-width: 820px) { .two { grid-template-columns: 1fr 1fr; align-items: start; } }
-  .takeaways { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
-  .take { background: var(--navy); color: #fff; border-radius: 12px; padding: 16px 18px; }
-  :root[data-theme="dark"] .take { background: var(--surface); }
-  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .take { background: var(--surface); } }
-  .take h3 { margin: 0 0 6px; font-size: 18px; }
-  .take h3::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px;
-                     background: #ca2437; margin-right: 8px; vertical-align: 1px; }
-  .take p { margin: 0; font-size: 16px; color: #d7dce5; }
-  :root[data-theme="dark"] .take p { color: var(--ink2); }
-  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .take p { color: var(--ink2); } }
-  pre { background: var(--code-bg); color: var(--code-ink); border-radius: 10px; padding: 16px 18px;
-        overflow-x: auto; font-size: 14.5px; line-height: 1.55; margin: 0 0 16px; }
-  code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
-  p code, li code { background: var(--surface); padding: 1px 6px; border-radius: 4px; font-size: .9em; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+  .sc { font-variant: small-caps; }
+
+  header { text-align: center; padding: 56px 0 28px; border-bottom: 1px solid var(--rule); }
+  .running { font-variant: small-caps; letter-spacing: .04em; color: var(--muted); margin: 0 0 18px; font-size: 17px; }
+  h1 { font-size: clamp(26px, 4.2vw, 38px); line-height: 1.25; font-weight: 700; margin: 0 0 22px; }
+  .authors { font-size: 20px; margin: 0; }
+  .affil { color: var(--ink2); margin: 2px 0 10px; font-style: italic; }
+  .venue { color: var(--navy); margin: 0; }
+  .buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 22px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 7px 16px; border-radius: 6px;
+         background: var(--navy-fill); color: var(--navy); text-decoration: none; font-weight: 700;
+         border: 1px solid var(--navy); font-size: 17px; }
+  .btn:hover { background: var(--navy); color: var(--bg); }
+  .btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; }
+  .btn svg.fill { fill: currentColor; stroke: none; }
+
+  section { padding: 34px 0 6px; }
+  h2 { font-size: 26px; margin: 0 0 14px; font-weight: 700; }
+  h2 .n { margin-right: 14px; }
+  h3 { font-size: 20px; margin: 28px 0 8px; font-weight: 700; }
+  p { margin: 0 0 14px; }
+  .abstract { max-width: 720px; margin: 0 auto; }
+  @media (min-width: 720px) { .abstract p { text-align: justify; hyphens: auto; } }
+  .abstract h2 { text-align: center; font-size: 20px; }
+
+  figure { margin: 22px 0 18px; }
+  .fig { background: var(--paper); border-radius: 4px; padding: 10px; }
+  :root[data-theme="dark"] .fig { padding: 14px; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fig { padding: 14px; } }
+  .fig img { display: block; width: 100%; height: auto; margin: 0 auto; }
+  figure.half { max-width: 560px; margin-left: auto; margin-right: auto; }
+  figure.mid { max-width: 680px; margin-left: auto; margin-right: auto; }
+  figure.wide { width: min(1180px, calc(100vw - 32px)); position: relative; left: 50%; transform: translateX(-50%); }
+  figcaption { font-size: 16.5px; line-height: 1.5; color: var(--ink2); margin: 10px auto 0; max-width: 760px; }
+  figcaption b { color: var(--ink); }
+
+  .box { border: 1px solid var(--navy); background: var(--navy-fill); border-radius: 6px; padding: 14px 18px; margin: 16px 0; }
+  .box.teal { border-color: var(--teal); background: var(--teal-fill); }
+  .box.copper { border-color: var(--copper); background: var(--copper-fill); }
+  .box h4 { margin: 0 0 6px; font-size: 18px; }
+  .box p:last-child { margin-bottom: 0; }
+  .steps { display: grid; gap: 12px; grid-template-columns: 1fr; margin: 14px 0; }
+  @media (min-width: 720px) { .steps { grid-template-columns: 1fr 1fr; } }
+  .steps .box { margin: 0; font-size: 17.5px; }
+
+  .tbl { overflow-x: auto; margin: 18px 0 6px; }
+  table { border-collapse: collapse; margin: 0 auto; font-size: 17px; }
+  caption { caption-side: top; text-align: left; font-size: 16.5px; color: var(--ink2); padding-bottom: 8px; line-height: 1.5; }
+  thead tr:first-child th { border-top: 2px solid var(--ink); }
+  thead tr:last-child th { border-bottom: 1px solid var(--ink); }
+  tbody tr:last-child td { border-bottom: 2px solid var(--ink); }
+  th, td { padding: 4px 12px; text-align: center; font-weight: 400; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  td.l { text-align: left; white-space: normal; }
+  tr.group td { font-style: italic; text-align: left; padding-top: 8px; }
+  tr.ours td { background: var(--navy-fill); }
+  th.span { border-bottom: 1px solid var(--rule); }
+  .table-note { font-size: 15.5px; color: var(--muted); }
+
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px;
+        overflow-x: auto; font-size: 15.5px; line-height: 1.5; margin: 0 0 14px; }
+  code { font-family: "CMU Typewriter Text", ui-monospace, Consolas, monospace; }
+  p code, li code { font-size: .95em; }
   .copy-wrap { position: relative; }
-  .copy { position: absolute; top: 8px; right: 8px; background: #273046; color: #fff; border: 0;
-          border-radius: 6px; padding: 4px 10px; font: 700 13px "Lato", sans-serif; cursor: pointer; }
-  .note { color: var(--muted); font-size: 15px; }
+  .copy { position: absolute; top: 8px; right: 8px; background: var(--navy-fill); color: var(--navy);
+          border: 1px solid var(--navy); border-radius: 4px; padding: 2px 10px; font: 15px "CMU Serif", Georgia, serif;
+          cursor: pointer; }
+  ul { padding-left: 22px; }
+  li { margin-bottom: 6px; }
+  .math { overflow-x: auto; overflow-y: hidden; }
+  mjx-container[display="false"] { white-space: nowrap; }
+
   .poster { display: grid; gap: 20px; grid-template-columns: 1fr; align-items: center; }
-  @media (min-width: 720px) { .poster { grid-template-columns: 260px 1fr; } }
-  .poster img { width: 100%; border-radius: 8px; border: 1px solid var(--rule); background: #fff; }
-  footer { border-top: 1px solid var(--rule); margin-top: 48px; padding: 24px 0 40px; color: var(--muted);
-           font-size: 15px; text-align: center; }
+  @media (min-width: 720px) { .poster { grid-template-columns: 240px 1fr; } }
+  .poster img { width: 100%; border: 1px solid var(--rule); border-radius: 4px; background: #fff; display: block; }
+
+  footer { border-top: 1px solid var(--rule); margin-top: 44px; padding: 22px 0 40px; color: var(--muted);
+           font-size: 16px; text-align: center; }
 </style>
 </head>
 <body>
-<div class="band"></div>
 <div class="wrap">
 
 <header>
-  <h1><span class="m">nMSM:</span> A Neural Multi-State Model for Joint State–Covariate Trajectory Forecasting</h1>
-  <p class="authors">Maxmillan Ries · Karthik Mohan · Bruce Guthrie · Sohan Seth</p>
+  <p class="running">Neural Multi-State Model</p>
+  <h1><span class="sc">nMSM</span>: A Neural Multi-State Model for Joint State–Covariate Trajectory Forecasting</h1>
+  <p class="authors">Maxmillan Ries &nbsp;·&nbsp; Karthik Mohan &nbsp;·&nbsp; Bruce Guthrie &nbsp;·&nbsp; Sohan Seth</p>
   <p class="affil">University of Edinburgh</p>
-  <span class="venue">ML4H 2026</span>
+  <p class="venue">Machine Learning for Health (ML4H) 2026 · Proceedings Track</p>
   <div class="buttons">
     <a class="btn" href="#citation">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15H6z M14 3v5h5"/></svg>Paper</a>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15H6z M14 2v5h5 M9 13h7 M9 17h7"/></svg>Paper</a>
     <a class="btn" href="https://github.com/TheMaxmillanRies/nmsm-ml4h">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5z"/></svg>Code</a>
+      <svg class="fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5z"/></svg>Code</a>
     <a class="btn" href="nmsm_ml4h2026_poster.pdf">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h18v14H3z M8 21h8 M12 17v4"/></svg>Poster</a>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h16v13H4z M9 21h6 M12 16v5"/></svg>Poster</a>
   </div>
 </header>
 
-<div class="tagline">
-  <b>Forecast the <span>patient</span>, not just the state.</b>
-  <p>Clinical states depend on measurements that have not been taken yet. nMSM generates the next state
-    <em>and</em> the measurements that follow it, feeds them back, and repeats.</p>
-</div>
-
-<figure>
-  <div class="fig"><img src="assets/hero_rollouts.png" alt="500 nMSM rollouts for one ICU patient: a fan of generated heart rate above a carpet of sampled respiratory-support paths over 48 hours, sorted by final state" loading="eager"></div>
-  <figcaption>An illustrative MIMIC-IV ICU stay (selected, not representative). After 48 h of history, nMSM samples 500 futures.
-    Each row of the carpet is one sampled path, sorted by state at +48 h. Heart rate is generated jointly with the states.
-    Averaging the paths gives occupation forecasts. Keeping them gives trajectories.</figcaption>
-</figure>
-
-<section>
+<section class="abstract">
   <h2>Abstract</h2>
-  <div class="abstract">
-    Multi-state models (MSMs) describe movement among mutually exclusive clinical states. Recent neural MSMs flexibly
+  <p>Multi-state models (MSMs) describe movement among mutually exclusive clinical states. Recent neural MSMs flexibly
     estimate transition risks, but typically forecast states without modelling how longitudinal covariates evolve into
     the future. This limits joint patient trajectory simulation, where generated covariates can influence subsequent
-    state transitions. We introduce nMSM, a discrete-time autoregressive model that encodes irregular patient histories
+    state transitions. We introduce <span class="sc">nMSM</span>, a discrete-time autoregressive model that encodes irregular patient histories
     to jointly generate states, measurements, and observation patterns within an explicit multi-state graph. At each
     step, future covariates are conditioned on the sampled next state and the completed row is fed back
-    autoregressively, closing the state–covariate feedback loop. On synthetic and clinical data, nMSM improves state
+    autoregressively, closing the state–covariate feedback loop. On synthetic and clinical data, <span class="sc">nMSM</span> improves state
     forecasting over baselines and matches selected path summaries, including transition counts and state durations,
-    supporting both marginal occupation forecasting and path-dependent simulation from a single learned process.
+    supporting both marginal occupation forecasting and path-dependent simulation from a single learned process.</p>
+</section>
+
+<section>
+  <h2><span class="n">1</span>The problem</h2>
+  <p>First-event survival analysis models the time until one event. Real clinical courses involve intermediate
+    conditions, repeated deterioration and recovery, and eventual absorbing outcomes such as discharge or death.
+    MSMs represent this as transitions among mutually exclusive states on a directed graph. Forecasting these
+    trajectories raises two challenges.</p>
+  <div class="steps">
+    <div class="box"><h4>The current snapshot is not enough</h4>
+      <p>Identical current measurements can follow steady recovery or a recent complication, so the model needs the
+        ordered history, including <em>what</em> was measured and <em>when</em>.</p></div>
+    <div class="box copper"><h4>Future transitions depend on future measurements</h4>
+      <p>Those measurements are unknown beyond the forecast start. Fixed covariates cannot represent this feedback,
+        and externally supplied update rules need a separate model of how covariates continue.</p></div>
+  </div>
+  <div class="tbl">
+    <table>
+      <caption><b>Table 1:</b> Forecasting scope of selected methods. Joint: future covariates and states or event
+        outcomes. ✓ supported; × absent; ◦ supplied covariates or progressive-only graphs.</caption>
+      <thead><tr><th>Method</th><th>Longitudinal covariates</th><th>Multi-state graph</th><th>Joint forecast</th></tr></thead>
+      <tbody>
+        <tr><td>msCox</td><td>◦</td><td>✓</td><td>×</td></tr>
+        <tr><td>SurvNODE</td><td>×</td><td>✓</td><td>×</td></tr>
+        <tr><td>msPseudo</td><td>×</td><td>✓</td><td>×</td></tr>
+        <tr><td>IDNetwork</td><td>×</td><td>◦</td><td>×</td></tr>
+        <tr><td>MSnet</td><td>×</td><td>◦</td><td>×</td></tr>
+        <tr><td>MixMarkov</td><td>×</td><td>✓</td><td>×</td></tr>
+        <tr><td>TransformerLSR</td><td>✓</td><td>×</td><td>✓</td></tr>
+        <tr><td>G-Transformer</td><td>✓</td><td>×</td><td>✓</td></tr>
+        <tr class="ours"><td><span class="sc">nMSM</span>-T / <span class="sc">nMSM</span>-GRU</td><td>✓</td><td>✓</td><td>✓</td></tr>
+      </tbody>
+    </table>
   </div>
 </section>
 
 <section>
-  <h2>How it works: <span class="q">close the loop</span></h2>
-  <figure><div class="fig"><img src="assets/loop.png" alt="History, then encoder, then next state, then covariates given that state; the generated row is appended and the loop repeats" loading="lazy"></div></figure>
-  <ol class="steps">
-    <li><b>Encode</b> the irregular history: states, values, what was measured, and the gaps between measurements.</li>
-    <li><b>Sample the next state</b>, using only moves the multi-state graph allows.</li>
-    <li><b>Sample the covariates</b> given that state: values, and whether each one is measured.</li>
-    <li><b>Append the row and repeat.</b> Generated measurements shape the next transition.</li>
-  </ol>
-</section>
-
-<section>
-  <h2><span class="q">Why?</span> Same state, different stories</h2>
-  <p class="lead">A state-only forecast gives one number: the chance of ending on invasive ventilation (INV). The futures behind it can be very different.</p>
-  <figure class="narrow">
-    <div class="fig"><img src="assets/same_state_stories.png" alt="Three sampled futures that all end on invasive ventilation but differ in timing, duration and number of state changes" loading="lazy"></div>
-    <figcaption>Three sampled futures that end on INV. The line shows generated heart rate. Explicit trajectories
-      answer pathway questions directly: how often, how long, and through which states.</figcaption>
+  <h2><span class="n">2</span>Method</h2>
+  <p><span class="sc">nMSM</span> is a discrete-time autoregressive model. States and measurements are aligned to a
+    common time grid (one synthetic step, one ICU hour, or one SAIL quarter). Each step samples the next state, then
+    the next row of covariates given that state, and feeds the completed row back in.</p>
+  <figure class="wide">
+    <div class="fig"><a href="assets/fig1_rollout_step.png"><img src="assets/fig1_rollout_step.png" alt="Diagram of one joint rollout step: history H_t goes through a shared encoder to h_t; the state head samples S_{t+1} using only allowed moves; the conditional covariate head samples measurements, observation indicators and binary attributes given S_{t+1}; the completed row is appended to history and the step repeats" loading="eager"></a></div>
+    <figcaption><b>Figure 1:</b> One joint rollout step. Masks select new measurements or carried values; the
+      completed row extends history. Individual index <i>i</i> and distribution-parameter indices are omitted.
+      FFN: feed-forward network; <i>j</i>: numerical feature; <i>b</i>: destination state.</figcaption>
   </figure>
-</section>
 
-<section>
-  <h2><span class="q">What if?</span> Policy evaluation by rollout</h2>
-  <p class="lead">Fix the action, roll out, compare. A treatment can change the generated measurements that drive later
-    transitions. This is longitudinal g-computation inside the same model.</p>
-  <figure class="narrow">
-    <div class="fig"><img src="assets/counterfactual_policies.png" alt="Probability of death over 12 steps under never-act, history-rule and always-act policies: truth, nMSM, G-Transformer and Linear" loading="lazy"></div>
-  </figure>
-  <figure class="narrow">
-    <div class="fig"><img src="assets/counterfactual_effect_error.png" alt="Absolute error in the always-versus-never effect on death: nMSM 0.0033, G-Transformer 0.0287, Linear 0.0502" loading="lazy"></div>
-    <figcaption>Synthetic simulator with known truth, 128 histories, step 12. The bars show the absolute error in the
-      always-vs-never effect on death. nMSM's covariate RMSE is higher than G-Transformer's (.0898 vs .0729). Clinical
-      use also requires consistency, exchangeability and positivity.</figcaption>
-  </figure>
-</section>
-
-<section>
-  <div class="two">
-    <div>
-      <h2>Break the loop → worse forecasts</h2>
-      <figure>
-        <div class="fig"><img src="assets/ablation.png" alt="Ablations on MIMIC-IV: removing masks and gaps, carrying values forward, scrambling history and using conditional means all increase IBS" loading="lazy"></div>
-        <figcaption>MIMIC-IV, IBS change relative to a matched nMSM-T. All ablations except the last are significant
-          (<i>p</i> &lt; .05). The generated covariates are not a side output. They carry the state forecast.</figcaption>
-      </figure>
-    </div>
-    <div>
-      <h2>Generated paths look real</h2>
-      <figure>
-        <div class="fig"><img src="assets/path_fidelity.png" alt="Distributions of number of state changes and hours on INV: real patients vs nMSM-generated paths" loading="lazy"></div>
-        <figcaption>MIMIC-IV, 500 held-out stays × 500 paths. 98.54% of generated measurements lie within preprocessing
-          ranges.</figcaption>
-      </figure>
-    </div>
+  <div class="steps">
+    <div class="box"><h4>1 · Encode the history</h4>
+      <p>Each row holds the state, the measurements, and for every feature a <b>missingness mask</b> (newly
+        measured?) and a <b>time gap</b> (steps since last measured). Dwell time, baseline covariates and binary
+        attributes are also inputs. A causal Transformer (<span class="sc">nMSM</span>-T) or a GRU
+        (<span class="sc">nMSM</span>-GRU) maps \(\mathcal{H}_t\) to \(\mathbf{h}_t\).</p></div>
+    <div class="box"><h4>2 · Sample the next state</h4>
+      <p>The state graph is imposed directly: the head gives log-odds \(\eta_{t,b}\) of moving to each permitted
+        destination, relative to staying. Prohibited transitions get zero probability by construction, and
+        absorbing states only lead to themselves.</p></div>
+    <div class="box copper"><h4>3 · Sample the covariates given that state</h4>
+      <p>For each feature, the covariate head samples whether it is measured, \(M \sim \mathrm{Bernoulli}(\rho)\); its value if
+        measured, \(X^{\mathrm{obs}} \sim \mathcal{N}(\mu, \sigma^2)\); and binary covariates,
+        \(B \sim \mathrm{Bernoulli}(\nu)\). The future recording pattern is generated too.</p></div>
+    <div class="box teal"><h4>4 · Complete the row and repeat</h4>
+      <p>A measured feature replaces the carried value and resets its gap; otherwise the gap grows. Dwell time
+        resets on a state change. The completed row becomes history for the next step: the state–covariate loop.</p></div>
   </div>
+
+  <h3>Constrained next-state distribution</h3>
+  <p>With adjacency \(\mathsf{A}\) and current state \(a\), for permitted destinations \(b \in \mathcal{A}(a)\):</p>
+  <div class="math">\[
+    p_{t,b} =
+    \begin{cases}
+      \dfrac{\exp(\eta_{t,b})}{1 + \sum_{c \in \mathcal{A}(a)\setminus\{a\}} \exp(\eta_{t,c})}, & b \in \mathcal{A}(a),\ b \neq a,\\[2ex]
+      1 - \sum_{c \in \mathcal{A}(a)\setminus\{a\}} p_{t,c}, & b = a,\\[1ex]
+      0, & \text{otherwise.}
+    \end{cases}
+  \]</div>
+
+  <h3>Joint factorisation</h3>
+  <p>Measurements can differ by destination, so the covariate head is conditioned on the sampled next state. With
+    \(V_{t+1}\) the next measurements, observation indicators and binary covariates:</p>
+  <div class="math">\[
+    p_{\theta,\phi}(S_{t+1}, V_{t+1} \mid \mathcal{H}_t) = p_\theta(S_{t+1} \mid \mathcal{H}_t)\; p_{\theta,\phi}(V_{t+1} \mid \mathcal{H}_t, S_{t+1}).
+  \]</div>
+
+  <h3>Joint trajectory forecasting</h3>
+  <p>From a landmark history \(\mathcal{H}_L\), <span class="sc">nMSM</span> samples \(R\) Monte Carlo
+    trajectories over the horizon. Occupation probabilities average the state-head probabilities across the
+    simulated histories:</p>
+  <div class="math">\[
+    \widehat{P}_{L,L+h}(k) = \frac{1}{R} \sum_{r=1}^{R} p_\theta\!\left(S_{L+h} = k \mid \mathcal{H}^{(r)}_{L+h-1}\right).
+  \]</div>
+  <p>Averaging the paths gives occupation forecasts. Keeping them gives full trajectories, which answer pathway
+    questions: how many state changes, how long on invasive ventilation, and with what measurements along the way.
+    Training weights the covariate objective by \(\lambda_{\mathrm{cov}}\):
+    \(\mathcal{L}(\theta,\phi) = \mathcal{L}_{\mathrm{state}}(\theta) + \lambda_{\mathrm{cov}}\,\mathcal{L}_{\mathrm{cov}}(\theta,\phi)\).</p>
 </section>
 
 <section>
-  <h2>Takeaways</h2>
-  <div class="takeaways">
-    <div class="take"><h3>Better forecasts</h3><p>Best IBS and iAUC against multi-state and direct baselines on synthetic data, MIMIC-IV (50,873 ICU stays) and SAIL (28,321 people).</p></div>
-    <div class="take"><h3>One model, two jobs</h3><p>Occupation forecasts, pathways and what-ifs all come from one fitted process.</p></div>
-    <div class="take"><h3>Fast if needed</h3><p>A distilled occupation head cuts inference from 2336.49 to 1.41 ms per history.</p></div>
-    <div class="take"><h3>Limitations</h3><p>Rollout errors can accumulate. Emissions are Gaussian and the time grid is fixed.</p></div>
+  <h2><span class="n">3</span>Evaluation</h2>
+  <p>We evaluate <span class="sc">nMSM</span> across three settings spanning different temporal resolutions and
+    sources of history dependence.</p>
+  <figure class="half">
+    <div class="fig"><img src="assets/fig2_state_graphs.png" alt="State graphs. Synthetic: Healthy and Sick lead to Death. SAIL: 0, 1, 2–4 and 5+ hospital admissions per quarter, all connected, lead to Death. MIMIC-IV: None, HFNC, NIV and INV, all connected, lead to Discharge or Death" loading="lazy"></div>
+    <figcaption><b>Figure 2:</b> State graphs. Living-state edges are bidirectional; grouped exits apply to all
+      living states. Self loops omitted. SAIL admissions reset each quarter.</figcaption>
+  </figure>
+  <div class="tbl">
+    <table>
+      <thead><tr><th></th><th>Synthetic</th><th>MIMIC-IV</th><th>SAIL</th></tr></thead>
+      <tbody>
+        <tr><td>Cohort</td><td class="l">8,000 illness–death trajectories</td><td class="l">50,873 ICU stays</td><td class="l">28,321 participants</td></tr>
+        <tr><td>Time step</td><td class="l">one interval</td><td class="l">one hour</td><td class="l">one quarter</td></tr>
+        <tr><td>Horizon</td><td class="l">12 steps</td><td class="l">48 hours</td><td class="l">6 quarters</td></tr>
+        <tr><td>Landmarks</td><td class="l">steps 15 / 24 / 37</td><td class="l">hours 24 / 48 / 84</td><td class="l">rounded follow-up quartiles</td></tr>
+      </tbody>
+    </table>
   </div>
+  <p class="table-note">MIMIC-IV states are hourly respiratory support. HFNC: high-flow nasal cannula oxygen;
+    NIV: non-invasive ventilation; INV: invasive ventilation.</p>
+  <p><b>Comparators.</b> msCox (classical statistical MSM), MixMarkov (state-path simulator), SurvNODE, IDNetwork and
+    msPseudo (neural state forecasting), and a snapshot Direct MLP that predicts occupation from the landmark state and
+    covariates without earlier history.</p>
+  <p><b>Protocol and metrics.</b> All methods share five patient-level outer folds, prediction targets and
+    landmarks. Landmark-conditional IPCW handles right censoring. We report integrated Brier score (IBS), multiclass
+    NLL, time-integrated AUROC (iAUC), MAE and ECE. Comparisons use corrected resampled tests with Holm adjustment.</p>
 </section>
 
 <section>
-  <h2>Code</h2>
+  <h2><span class="n">4</span>Results</h2>
+
+  <h3>State forecasting and calibration</h3>
+  <p>Across all datasets and landmarks, both <span class="sc">nMSM</span> variants achieve the best mean IBS and
+    iAUC among the evaluated methods. The advantage over the snapshot Direct MLP is largest on the history-dependent
+    synthetic task. On MIMIC-IV the gap is narrower, but <span class="sc">nMSM</span> retains a significant IBS
+    advantage at every landmark.</p>
+  <div class="tbl">
+    <table>
+      <caption><b>Table 2</b> (Q50 landmark): five-fold means integrated over horizons. IBS lower is better; iAUC higher
+        is better. Bold: best per column. The paper reports all three landmarks and all metrics.</caption>
+      <thead>
+        <tr><th rowspan="2">Method</th><th class="span" colspan="2">Synthetic</th><th class="span" colspan="2">MIMIC-IV</th><th class="span" colspan="2">SAIL</th></tr>
+        <tr><th>IBS ↓</th><th>iAUC ↑</th><th>IBS ↓</th><th>iAUC ↑</th><th>IBS ↓</th><th>iAUC ↑</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>msCox</td><td>.1588</td><td>.7695</td><td>.0723</td><td>.8007</td><td>.0769</td><td>.6864</td></tr>
+        <tr><td>SurvNODE</td><td>.1703</td><td>.7083</td><td>.0699</td><td>.8116</td><td>–</td><td>–</td></tr>
+        <tr><td>IDNetwork</td><td>.1709</td><td>.7101</td><td>.0693</td><td>.8148</td><td>.0895</td><td>.6075</td></tr>
+        <tr><td>msPseudo</td><td>.1711</td><td>.7025</td><td>.0695</td><td>.7567</td><td>.0890</td><td>.6265</td></tr>
+        <tr><td>MixMarkov</td><td>.1713</td><td>.7182</td><td>.0722</td><td>.8111</td><td>.0911</td><td>.6504</td></tr>
+        <tr><td>Direct MLP</td><td>.1591</td><td>.7712</td><td>.0644</td><td>.8668</td><td>.0757</td><td>.6974</td></tr>
+        <tr class="ours"><td><span class="sc">nMSM</span>-T</td><td><b>.1430</b></td><td><b>.8195</b></td><td>.0626</td><td>.8858</td><td><b>.0685</b></td><td><b>.7255</b></td></tr>
+        <tr class="ours"><td><span class="sc">nMSM</span>-GRU</td><td>.1437</td><td>.8186</td><td><b>.0617</b></td><td><b>.8902</b></td><td>.0701</td><td>.7195</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="table-note">SAIL omits SurvNODE because secure-environment compute limits prevented timely training.</p>
+  <figure class="half">
+    <div class="fig"><img src="assets/fig3_calibration.png" alt="Calibration curves for discharge and death on MIMIC-IV: observed proportion against mean predicted probability for nMSM-T and baselines, with the ideal diagonal" loading="lazy"></div>
+    <figcaption><b>Figure 3:</b> MIMIC-IV calibration at landmark 48, horizon 48: ten equal-frequency bins.
+      Crimson: <span class="sc">nMSM</span>-T; diagonal: ideal calibration. IPCW weights are one.</figcaption>
+  </figure>
+
+  <h3>Value of history and joint continuation</h3>
+  <p>Targeted ablations isolate which parts of the formulation contribute to forecasting performance. Removing
+    missingness masks and time gaps produces the largest deterioration, and replacing generated measurements with
+    conditional means or carried-forward values also worsens state forecasting.</p>
+  <div class="tbl">
+    <table>
+      <caption><b>Table 3:</b> MIMIC-IV ΔIBS versus matched <span class="sc">nMSM</span>-T; positive: worse.
+        *: <i>p</i> &lt; .05, unadjusted corrected resampled test. Five folds, 500 paths.</caption>
+      <thead><tr><th>Control</th><th>ΔIBS</th></tr></thead>
+      <tbody>
+        <tr class="group"><td colspan="2">Refitted components</td></tr>
+        <tr><td>No masks/gaps</td><td>+.00336*</td></tr>
+        <tr><td>No next-state conditioning</td><td>+.00121</td></tr>
+        <tr class="group"><td colspan="2">Frozen-model continuation and order</td></tr>
+        <tr><td>Conditional means</td><td>+.00177*</td></tr>
+        <tr><td>Value-LOCF</td><td>+.00221*</td></tr>
+        <tr><td>Scrambled history</td><td>+.00214*</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Generated paths</h3>
+  <p>Across 500 held-out MIMIC-IV stays, <span class="sc">nMSM</span>-T closely reproduces the observed
+    distributions of state-change counts and cumulative invasive-ventilation duration. Discharge occupation is
+    overpredicted at 48 hours (Figure 4c), so agreement on selected path summaries does not imply recovery of the
+    full trajectory distribution. Across 16 variables, 98.54% of newly generated measurements remain within
+    preprocessing ranges.</p>
+  <figure class="mid">
+    <div class="fig"><img src="assets/fig4_path_summaries.png" alt="Path summaries on MIMIC-IV: observed versus generated percentages of state changes and INV duration on log scales, and observed versus generated state occupation over 48 hours" loading="lazy"></div>
+    <figcaption><b>Figure 4:</b> 48-hour <span class="sc">nMSM</span>-T rollouts: 100 held-out stays/fold, 500
+      paths each. (a–b) Log percentages. (c) Solid: observed occupation; dashed: generated occupation.</figcaption>
+  </figure>
+  <figure class="half">
+    <div class="fig"><img src="assets/fig5_example_patient.png" alt="An example ICU stay: recorded heart rate and SpO2 for 24 hours before the landmark and the 5th–95th percentile range of rollouts for the next 48 hours, above predicted state occupation and the recorded state" loading="lazy"></div>
+    <figcaption><b>Figure 5:</b> An example patient’s recorded heart rate (blue) and SpO<sub>2</sub> (copper) are
+      compared with the 5th–95th percentile range of non-terminal rollouts in (a), alongside predicted state
+      occupation probabilities and the recorded state (copper) in (b).</figcaption>
+  </figure>
+
+  <h3>Policy evaluation through longitudinal g-computation</h3>
+  <p>When interventions affect measurements that subsequently influence later decisions and state transitions,
+    action-conditioned <span class="sc">nMSM</span> can generate them within the same rollout used for longitudinal
+    g-computation. On synthetic data with known policy outcomes, mean-corrected <span class="sc">nMSM</span>-T
+    achieves occupation error comparable to the state-aware G-Transformer and lower death-contrast error, although
+    its covariate RMSE is higher.</p>
+  <div class="tbl">
+    <table>
+      <caption><b>Table 4:</b> G-computation: 128 histories, two-seed mean errors. Lower is better; |Δ|: error in
+        always-minus-never death risk at step 12. <span class="sc">nMSM</span>-T-cal adds nine mean corrections.</caption>
+      <thead><tr><th>Method</th><th>Occupation MAE</th><th>Covariate RMSE</th><th>Death |Δ|</th></tr></thead>
+      <tbody>
+        <tr><td>Linear</td><td>.1068</td><td>.3710</td><td>.0502</td></tr>
+        <tr><td>G-Transformer</td><td>.0089</td><td><b>.0729</b></td><td>.0287</td></tr>
+        <tr class="ours"><td><span class="sc">nMSM</span>-T-cal</td><td><b>.0087</b></td><td>.0898</td><td><b>.0033</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Accurate policy contrasts do not guarantee equally accurate intermediate covariate trajectories. Clinical
+    application would additionally require consistency, sequential exchangeability, and positivity.</p>
+
+  <h3>Fast occupation forecasts through distillation</h3>
+  <p>Full Monte Carlo rollout is only needed when complete trajectories are. A lightweight head trained on the
+    frozen encoder approximates the simulator’s occupation forecasts, reducing matched CPU inference from 2336.49
+    to 1.41 ms per history across 683 held-out histories while retaining similar IBS, NLL and ECE.</p>
+</section>
+
+<section>
+  <h2><span class="n">5</span>Limitations</h2>
+  <ul>
+    <li>Errors can accumulate, because generated measurements are fed back into later predictions. Covariate
+      prediction error grows with the horizon.</li>
+    <li>Gaussian emissions occasionally leave preprocessing ranges and do not capture residual cross-variable
+      dependence.</li>
+    <li>Transportability may depend on local recording practice, because <span class="sc">nMSM</span> learns the
+      observation process.</li>
+    <li>The clinical graphs are dense among living states and use a fixed time grid. Sparse graphs and
+      continuous-time formulations remain to be tested.</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="n">6</span>Code</h2>
   <p>The repository contains the model, preprocessing, training and evaluation code for the primary synthetic and
     MIMIC-IV comparison. It contains <b>no patient data and no trained weights</b>. Every command prints its plan
     unless you pass <code>--execute</code>.</p>
@@ -254,14 +443,15 @@ python reproduce.py prepare-mimic --raw-root /path/to/files --execute
 python reproduce.py train --dataset synthetic_full --device cuda --execute
 python reproduce.py train --dataset mimic --device cuda --execute
 python scripts/summarize_primary.py --runs runs --data-root data --output results</code></pre></div>
-  <p class="note">MIMIC-IV input is the credentialed
+  <p class="table-note">MIMIC-IV input is the credentialed
     <a href="https://physionet.org/content/temporal-respiratory-support/1.1.0/">PhysioNet temporal respiratory-support dataset v1.1.0</a>.
     SAIL analyses ran inside the SAIL secure environment, and those data cannot be redistributed. See the
-    <a href="https://github.com/TheMaxmillanRies/nmsm-ml4h#readme">README</a> for options and training notes.</p>
+    <a href="https://github.com/TheMaxmillanRies/nmsm-ml4h#readme">README</a> for options and training notes.
+    Code released under the MIT License.</p>
 </section>
 
 <section>
-  <h2>Poster</h2>
+  <h2><span class="n">7</span>Poster</h2>
   <div class="poster">
     <a href="nmsm_ml4h2026_poster.pdf"><img src="assets/poster_preview.png" alt="Preview of the nMSM ML4H 2026 poster" loading="lazy"></a>
     <p>The 24 × 36 in poster presented at ML4H 2026. <a href="nmsm_ml4h2026_poster.pdf">Download the PDF</a>.</p>
